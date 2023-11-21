@@ -1,6 +1,10 @@
 # Prerequisites
 *.d
 
+#Generated folders
+**/lab1/.vscode
+**/lab1/build_lnx/
+
 # Compiled Object files
 *.slo
 *.lo
