@@ -16,8 +16,14 @@
 #include <osg/MatrixTransform>
 #include <osg/LineWidth>
 #include <osg/Material>
-
+#include <osg/PositionAttitudeTransform>
 #include <osg/ComputeBoundsVisitor>
+#include <osgUtil/IntersectVisitor>
+#include <osg/NodeVisitor>
+#include <osgUtil/RayIntersector>
+
+
+
 
 #include <filesystem>
 
@@ -102,6 +108,10 @@ struct MyApp::Impl {
 
   osg::ref_ptr<osg::Group> scenegraph_root = new osg::Group;
   osg::ref_ptr<osg::MatrixTransform> wand_transform = new osg::MatrixTransform;
+  osg::ref_ptr<osg::PositionAttitudeTransform> plane;
+  osg::ref_ptr<osg::PositionAttitudeTransform> truck;
+  osg::ref_ptr<osg::PositionAttitudeTransform> navigation;
+
 };
 
 
@@ -132,6 +142,7 @@ MyApp::Impl::Impl(
 
   setup_sync(sync_nodes);
   setup_wand(controllers);
+
   
   initOSG();
 }
@@ -293,6 +304,29 @@ void MyApp::Impl::update_states(gmCore::Updateable::clock::time_point time) {
   if (*sync_second_button) G = 0.8;
   if (*sync_menu_button) B = 0.8;
   wand_material->setEmission(osg::Material::FRONT_AND_BACK, osg::Vec4(R, G, B, 1.0));
+
+  osg::Vec3 forward = osg::Vec3(0.0f,0.0f,-1.0f);
+  osgUtil::RayIntersector* intersector = new osgUtil::RayIntersector(oP, oQ*forward);
+  osgUtil::IntersectionVisitor visitor(intersector);
+  scenegraph_root->accept(visitor);
+  //If there is intersections
+  if(intersector->containsIntersections()){  
+    osgUtil::RayIntersector::Intersections& intersections = intersector->getIntersections();
+    //Loop through a list of Intersection
+    //TO-DO navigation is the node containing the objects to navigate the scene
+    navigation->setAttitude(osg::Quat((rand()%180)/20, osg::Vec3(0,0,1)));
+    for (auto &itr : intersections){
+      //For each intersection we traverse the nodePath to check if is same as our node.
+      for (auto &node : itr.nodePath ){
+        if(node == truck){
+            truck->setAttitude(osg::Quat((rand()%180)/20, osg::Vec3(0,0,1)));
+        }
+        if(node == plane){
+            plane->setAttitude(osg::Quat((rand()%180)/20, osg::Vec3(0,1,0)));
+        }
+      }
+    }
+  }
 }
 
 void MyApp::Impl::initOSG() {
@@ -306,49 +340,71 @@ void MyApp::Impl::initOSG() {
     // not used. How can we otherwise know if we should render a wand
     // or not?
     osg::ref_ptr<osg::Node> wand_node = createWand();
+    osg::ref_ptr<osg::Node> truckNode = osgDB::readNodeFile("dumptruck.osg");
+    osg::ref_ptr<osg::Node> planeNode = osgDB::readNodeFile("cessna.osg");
+    osg::ref_ptr<osg::Group> subRoot = new osg::Group();
+    truck = new osg::PositionAttitudeTransform();
+    plane = new osg::PositionAttitudeTransform();
+    navigation = new osg::PositionAttitudeTransform();
+
+    plane->setPosition(osg::Vec3(-1,0,0));
+    //plane->setAttitude(osg::Quat(-0.7, osg::Vec3(1,0,0)));
+    plane->setScale(osg::Vec3(0.06,0.06,0.06));
+
+    truck->setPosition(osg::Vec3(1,0, 0));
+    truck->setAttitude(osg::Quat(1.57, osg::Vec3(0,0,1)));
+    truck->setScale(osg::Vec3(0.06,0.06,0.06));
+
+    truck->addChild(truckNode);
+    plane->addChild(planeNode);
+
+    
     wand_transform->addChild(wand_node);
     scenegraph_root->addChild(wand_transform);
+    navigation->addChild(truck);
+    navigation->addChild(plane);
+    scenegraph_root->addChild(navigation);
   }
 
-  std::string url = "urn:gramods:resources/sphere.osgt";
-  std::filesystem::path path = gmCore::FileResolver::getDefault()->resolve(url);
-  osg::ref_ptr<osg::Node> model = osgDB::readNodeFile(path.generic_u8string());
+  // std::string url = "urn:gramods:resources/sphere.osgt";
+  // std::filesystem::path path = gmCore::FileResolver::getDefault()->resolve(url);
+  // osg::ref_ptr<osg::Node> model = osgDB::readNodeFile(path.generic_u8string());
 
-  if (!model.valid()) {
-    if (url == path)
-      GM_ERR("MyApp", "Could not load file \"" << url << "\"");
-    else
-      GM_ERR("MyApp", "Could not load file " << path.generic_u8string() << " (" << url << ")");
-    return;
-  }
+  // if (!model.valid()) {
+  //   if (url == path)
+  //     GM_ERR("MyApp", "Could not load file \"" << url << "\"");
+  //   else
+  //     GM_ERR("MyApp", "Could not load file " << path.generic_u8string() << " (" << url << ")");
+  //   return;
+  // }
 
-  GM_DBG1("MyApp", "Model loaded successfully!");
+  // GM_DBG1("MyApp", "Model loaded successfully!");
 
-  osg::ref_ptr<osg::MatrixTransform> model_transform =
-      new osg::MatrixTransform();
-  scenegraph_root->addChild(model_transform);
-  model_transform->addChild(model);
+  // osg::ref_ptr<osg::MatrixTransform> model_transform =
+  //     new osg::MatrixTransform();
+  // scenegraph_root->addChild(model_transform);
+  // model_transform->addChild(model);
 
-  //get the bounding box
-  osg::ComputeBoundsVisitor cbv;
-  osg::BoundingBox &bb(cbv.getBoundingBox());
-  model->accept(cbv);
+  // //get the bounding box
+  // osg::ComputeBoundsVisitor cbv;
+  // osg::BoundingBox &bb(cbv.getBoundingBox());
+  // model->accept(cbv);
 
-  osg::Vec3f tmpVec = bb.center();
-  float tmpScale = 1.f / bb.radius();
+  // osg::Vec3f tmpVec = bb.center();
+  // float tmpScale = 1.f / bb.radius();
 
-  // scale to fit model and translate model center to origin
-  model_transform->postMult(osg::Matrix::translate(-tmpVec));
-  model_transform->postMult(osg::Matrix::scale(tmpScale, tmpScale, tmpScale));
+  // // scale to fit model and translate model center to origin
+  // model_transform->postMult(osg::Matrix::translate(-tmpVec));
+  // model_transform->postMult(osg::Matrix::scale(tmpScale, tmpScale, tmpScale));
 
-  GM_DBG1("MyApp",
-          "Model bounding sphere center: " << tmpVec[0] << ", " << tmpVec[1]
-                                           << ", " << tmpVec[2]);
-  GM_DBG1("MyApp", "Model bounding sphere radius: " << tmpScale);
+  // GM_DBG1("MyApp",
+  //         "Model bounding sphere center: " << tmpVec[0] << ", " << tmpVec[1]
+  //                                          << ", " << tmpVec[2]);
+  // GM_DBG1("MyApp", "Model bounding sphere radius: " << tmpScale);
 
   //disable face culling
-  model->getOrCreateStateSet()->setMode(
-      GL_CULL_FACE, osg::StateAttribute::OFF | osg::StateAttribute::OVERRIDE);
+  // model->getOrCreateStateSet()->setMode(
+  //     GL_CULL_FACE, osg::StateAttribute::OFF | osg::StateAttribute::OVERRIDE);
 }
 
 osg::ref_ptr<osg::Node> MyApp::Impl::createWand() {
