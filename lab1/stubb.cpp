@@ -19,7 +19,7 @@ class IntersectCallback : public osg::NodeCallback
 {
   public:
   IntersectCallback(osg::PositionAttitudeTransform* _truck, osg::Vec3 _line_p0, osg::Vec3 _line_p1) :
-    truck{_truck},  line_p0{_line_p0}, line_p1{_line_p1} {}
+    aGroup{_truck},  line_p0{_line_p0}, line_p1{_line_p1} {}
 
   //Callback method called by the NodeVisitor when visiting a node
   virtual void operator()(osg::Node* root, osg::NodeVisitor* aVisitor) override {
@@ -28,42 +28,24 @@ class IntersectCallback : public osg::NodeCallback
 
     osgUtil::IntersectionVisitor visitor(intersector);
     root->accept(visitor);
-    // osg::AnimationPath* myPath = new osg::AnimationPath();
-    // osg::AnimationPath::ControlPoint start = osg::AnimationPath::ControlPoint(osg::Vec3(4.f, 25.f,3.f),osg::Quat(),osg::Vec3(.5f,.5f,.5f));
-    // osg::AnimationPath::ControlPoint middle = osg::AnimationPath::ControlPoint(osg::Vec3(40.f, 25.f,3.f)));
-    // osg::AnimationPath::ControlPoint finish = osg::AnimationPath::ControlPoint(osg::Vec3(4.f, 25.f,3.f),osg::Quat(6.28, osg::Vec3(0,0,1)), osg::Vec3(.5f,.5f,.5f));
-    // myPath->insert(0.0, start);
-    // myPath->insert(10.0,middle);
-    // myPath->insert(15.0, finish);
-
-    // osg::AnimationPathCallback* imitation = new osg::AnimationPathCallback(myPath);
-
 
     if(intersector->containsIntersections()){
       osgUtil::LineSegmentIntersector::Intersections& intersections = intersector->getIntersections();  
-
+      //Nested loop to traverse and compare if the intersector is the same as the instantiated object
       // for (auto &itr : intersections){
       //   for (auto &node : itr.nodePath ){
-      //     // if(truck == node){
-            
-      //     // }
-              truck->setAttitude(osg::Quat((rand()%180)/20, osg::Vec3(0,0,1)));
-              
-              
-          
-          
+      //      if(truck == node){
+              aGroup->setAttitude(osg::Quat((rand()%180)/20, osg::Vec3(0,0,1)));
       //   }
       // }
     }
     else{
-
     }
     osg::NodeCallback::operator()(root, aVisitor);
   }
   private:
-  //To be used if passing the root through constructor
-  //osg::ref_ptr<osg::Group> root;
-  osg::ref_ptr<osg::PositionAttitudeTransform> truck;
+  //To aGroup is the object we want to change if the line was intersected
+  osg::ref_ptr<osg::PositionAttitudeTransform> aGroup;
   osg::Vec3 line_p0, line_p1;
 };
 
@@ -98,8 +80,6 @@ int main(int argc, char *argv[]){
   
   /// ---
 #endif
-
-  
   //Create a heightfield   
   osg::HeightField* heightField = new osg::HeightField();
   heightField->allocate(50.f, 50.f);
@@ -168,26 +148,17 @@ int main(int argc, char *argv[]){
   truckLOD->setScale(osg::Vec3f(.5f,.5f,.5f));
   truckLOD->addChild(lodGroup);
 
-
-  
-  
-  
-
   osg::AnimationPath* myPath = new osg::AnimationPath();
   osg::AnimationPath::ControlPoint start = osg::AnimationPath::ControlPoint(osg::Vec3(4.f, 25.f,3.f),osg::Quat(),osg::Vec3(.5f,.5f,.5f));
   osg::AnimationPath::ControlPoint middle = osg::AnimationPath::ControlPoint(osg::Vec3(40.f, 25.f,3.f),osg::Quat(3.14, osg::Vec3(0,0,1)),osg::Vec3(.5f,.5f,.5f));
   osg::AnimationPath::ControlPoint finish = osg::AnimationPath::ControlPoint(osg::Vec3(4.f, 25.f,3.f),osg::Quat(6.28, osg::Vec3(0,0,1)), osg::Vec3(.5f,.5f,.5f));
 
-
   myPath->insert(0.0, start);
   myPath->insert(5.0,middle);
   myPath->insert(10.0, finish);
 
-
-
   osg::AnimationPathCallback* imitation = new osg::AnimationPathCallback(myPath);
   truck->setUpdateCallback(imitation);
-
 
   IntersectCallback* myAction = new IntersectCallback(truckLOD,line_p0,line_p1);
   root->setUpdateCallback(myAction);
@@ -196,12 +167,10 @@ int main(int argc, char *argv[]){
   root->addChild(truck);
   root->addChild(truckLOD);
   
-  
-
   // Optimizes the scene-graph
   // osgUtil::Optimizer optimizer;
   // optimizer.optimize(root);
-  
+
   // Set up the viewer and add the scene-graph root
   osgViewer::Viewer viewer;
   viewer.setSceneData(root);
