@@ -5,7 +5,7 @@
 **/lab1/.vscode
 **/lab1/build_lnx/
 **/lab2/.vscode/
-**/lab2/.build_lnx/
+**/lab2/build_lnx/
 # Compiled Object files
 *.slo
 *.lo
