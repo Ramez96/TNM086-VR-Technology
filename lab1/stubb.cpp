@@ -47,9 +47,8 @@ class IntersectCallback : public osg::NodeCallback
       //     // if(truck == node){
             
       //     // }
-              for (size_t i = 0; i < 4; i++){
-              truck->setAttitude(osg::Quat(sin(rand()%180), osg::Vec3(0,0,1)));
-              }
+              truck->setAttitude(osg::Quat((rand()%180)/20, osg::Vec3(0,0,1)));
+              
               
           
           
@@ -75,8 +74,8 @@ int main(int argc, char *argv[]){
 #if 1
   /// Line ---
 
-  osg::Vec3 line_p0 (25, 0, 0);
-  osg::Vec3 line_p1 ( 25, 50, 0);
+  osg::Vec3 line_p0 (25, 0, 3);
+  osg::Vec3 line_p1 ( 25, 50, 3);
   
   osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array();
   vertices->push_back(line_p0);
@@ -152,7 +151,6 @@ int main(int argc, char *argv[]){
   simplifier.setSampleRatio(0.4f);
   truckNodeLow->accept(simplifier);
   lodGroup->addChild(truckNodeLow, 1000.f, 10000.f);
-
   //Medium LOD for truck
   simplifier.setSampleRatio(.6f);
   truckNodeMed->accept(simplifier);
@@ -182,8 +180,8 @@ int main(int argc, char *argv[]){
 
 
   myPath->insert(0.0, start);
-  myPath->insert(20.0,middle);
-  myPath->insert(40.0, finish);
+  myPath->insert(5.0,middle);
+  myPath->insert(10.0, finish);
 
 
 
@@ -191,7 +189,7 @@ int main(int argc, char *argv[]){
   truck->setUpdateCallback(imitation);
 
 
-  IntersectCallback* myAction = new IntersectCallback(ship,line_p0,line_p1);
+  IntersectCallback* myAction = new IntersectCallback(truckLOD,line_p0,line_p1);
   root->setUpdateCallback(myAction);
   root->addChild(myGeode);  
   root->addChild(ship);
