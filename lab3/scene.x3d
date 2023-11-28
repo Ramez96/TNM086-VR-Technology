@@ -2,17 +2,20 @@
 
 <Scene>
     <NavigationInfo type="None" />
-    <Transform translation="0.2 0 0" >
+    <!--  BOX  -->
+    <Transform DEF="BTR" translation="0.2 0 0" >
         <Shape>
             <Appearance>
-                <Material diffuseColor="0.5 0.5 0.8" />
-                <FrictionalSurface useRelativeValues="false" stiffness="200" damping="0" staticFriction="0" dynamicFriction="0" />
+                <ImageTexture url="perlin.png" repeatS="false" repeatT="false"/>
+                <DepthMapSurface stiffness="0.3" maxDepth="0.007" staticFriction="0.4" dynamicFriction="0.2" whiteIsOut="true" >                
+                    <ImageTexture containerField="depthMap" url="perlin.png" repeatS="false" repeatT="false"/>
+                </DepthMapSurface>
             </Appearance>
             <Box size="0.1 0.1 0.1"/>
         </Shape>
     </Transform>
     <!--  CONE   -->
-    <Transform translation="0 0 0" >
+    <Transform DEF="CTR" translation="0 0 0" >
         <Shape>
             <Appearance>
                 <Material diffuseColor="0.9 0.5 0.8" />
@@ -22,15 +25,30 @@
         </Shape>
     </Transform>
     <!--   SPHERE    -->
-    <Transform translation="-0.2 0 0" >
+    <Transform DEF="STR" translation="-0.2 0 0" >
         <Shape>
             <Appearance>
-                <Material diffuseColor="0.5 0.2 0.2" />
+                <Material diffuseColor="0.2 0.5 0.8" />
                 <FrictionalSurface useRelativeValues="false" stiffness="200" damping="0" staticFriction="0" dynamicFriction="0" />
             </Appearance>
             <Sphere radius="0.05"/>
         </Shape>
     </Transform>
+
+
+    <!--Rotation for Box-->
+    <PythonScript DEF="ROTATOR" url="urn:candy:python/Rotator.py">
+        <MetadataFloat name="eulerAxis" value="1 0 0"
+                    containerField="references"/>
+        <MetadataFloat name="eulerLimits" value="-1 1"
+                    containerField="references"/>
+        <MetadataFloat name="eulerAxis" value="0 1 0"
+                    containerField="references"/>
+    </PythonScript>
+    
+    <ROUTE fromNode="ROTATOR" fromField="rotation"
+            toNode="BTR" toField="rotation"/>
+
 
     
 
