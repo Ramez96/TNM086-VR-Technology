@@ -1,8 +1,8 @@
 <?xml version= "1.0" encoding="UTF-8"?>
 
 <Scene>
-    <NavigationInfo type="None" />
-    <Transform translation="0.1 0 0" >
+    <NavigationInfo type="None"/>
+    <Transform DEF="CubeTransform" translation="0.1 0 0" >
         <Shape DEF="Cube">
             <Appearance>
                 <Material diffuseColor="0.5 0.5 0.8" />
@@ -11,4 +11,16 @@
             <Box size="0.1 0.1 0.1"/>
         </Shape>
     </Transform>
+
+    <PythonScript DEF="ROTATOR" url="urn:candy:python/Rotator.py">
+    <MetadataFloat name="eulerAxis" value="1 0 0"
+                   containerField="references"/>
+    <MetadataFloat name="eulerLimits" value="-1 1"
+                   containerField="references"/>
+    <MetadataFloat name="eulerAxis" value="0 1 0"
+                   containerField="references"/>
+  </PythonScript>
+  <ROUTE fromNode="ROTATOR" fromField="rotation"
+         toNode="CubeTransform" toField="rotation"/>
+
 </Scene>
