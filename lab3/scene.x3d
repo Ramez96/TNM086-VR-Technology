@@ -6,30 +6,27 @@
         <Shape>
             <Appearance>
                 <Material diffuseColor="0.5 0.5 0.8" />
-                
-                <SmoothSurface useRelativeValues="false" stiffness="200" damping="0" />
+                <FrictionalSurface useRelativeValues="false" stiffness="200" damping="0" staticFriction="0" dynamicFriction="0" />
             </Appearance>
             <Box size="0.1 0.1 0.1"/>
         </Shape>
     </Transform>
-
+    <!--  CONE   -->
     <Transform translation="0 0 0" >
         <Shape>
             <Appearance>
                 <Material diffuseColor="0.9 0.5 0.8" />
-                
-                <SmoothSurface useRelativeValues="false" stiffness="500" damping="2" />
+                <FrictionalSurface useRelativeValues="false" stiffness="200" damping="0" staticFriction="0" dynamicFriction="0" />
             </Appearance>
             <Cone bottomRadius="0.05" height="0.2"/>
         </Shape>
     </Transform>
-
+    <!--   SPHERE    -->
     <Transform translation="-0.2 0 0" >
         <Shape>
             <Appearance>
                 <Material diffuseColor="0.5 0.2 0.2" />
-                
-                <SmoothSurface useRelativeValues="false" stiffness="1000" damping="5" />
+                <FrictionalSurface useRelativeValues="false" stiffness="200" damping="0" staticFriction="0" dynamicFriction="0" />
             </Appearance>
             <Sphere radius="0.05"/>
         </Shape>
