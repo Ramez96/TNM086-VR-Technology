@@ -20,6 +20,7 @@
 #include <osg/ComputeBoundsVisitor>
 #include <osgUtil/IntersectVisitor>
 #include <osg/NodeVisitor>
+#include <osg/Vec3f>
 #include <osgUtil/RayIntersector>
 
 
@@ -31,7 +32,8 @@ using namespace gramods;
 
 typedef gmNetwork::SyncSData<Eigen::Vector3f> SyncSVec;
 typedef gmNetwork::SyncSData<Eigen::Quaternionf> SyncSQuat;
-
+bool isNavigating = false;
+float startLength = 0.0;
 /**
  * Definition of the internal code of MyApp
  */
@@ -291,6 +293,9 @@ void MyApp::Impl::update_states(gmCore::Updateable::clock::time_point time) {
 
   Eigen::Vector3f eP = *sync_wand_position;
   Eigen::Quaternionf eQ = *sync_wand_orientation;
+  //Update head position to calculate the eye/hand direction line
+  Eigen::Vector3f hP = *sync_head_position;
+  osg::Vec3 headPos(hP.x(), hP.y(), hP.z());
 
   osg::Vec3 oP(eP.x(), eP.y(), eP.z());
   osg::Quat oQ(eQ.x(), eQ.y(), eQ.z(), eQ.w());
@@ -309,20 +314,36 @@ void MyApp::Impl::update_states(gmCore::Updateable::clock::time_point time) {
   osgUtil::RayIntersector* intersector = new osgUtil::RayIntersector(oP, oQ*forward);
   osgUtil::IntersectionVisitor visitor(intersector);
   scenegraph_root->accept(visitor);
+  
+
+  if(!isNavigating) startLength = (oP-headPos).length();
+
+  if (*sync_second_button){
+    isNavigating = true;
+    float length = (oP-headPos).length();
+    float velocity = length - startLength;
+    //pointing mode 
+    navigation->setPosition((navigation->getPosition() + (oQ*forward)*velocity/80));
+    //Cross hair mode
+    //osg::Vec3 eyeHand = (oP-headPos)/length;
+    //navigation->setPosition((navigation->getPosition() + (eyeHand)*velocity/100));
+  }
+  else{
+    isNavigating = false;
+  }
+  
   //If there is intersections
   if(intersector->containsIntersections()){  
     osgUtil::RayIntersector::Intersections& intersections = intersector->getIntersections();
     //Loop through a list of Intersection
-    //TO-DO navigation is the node containing the objects to navigate the scene
-    navigation->setAttitude(osg::Quat((rand()%180)/20, osg::Vec3(0,0,1)));
     for (auto &itr : intersections){
       //For each intersection we traverse the nodePath to check if is same as our node.
       for (auto &node : itr.nodePath ){
         if(node == truck){
-            truck->setAttitude(osg::Quat((rand()%180)/20, osg::Vec3(0,0,1)));
+            truck->setAttitude(osg::Quat(truck->getAttitude().w() + (rand()%180)/100.2, osg::Vec3(0,0,1)));
         }
         if(node == plane){
-            plane->setAttitude(osg::Quat((rand()%180)/20, osg::Vec3(0,1,0)));
+            plane->setAttitude(osg::Quat(truck->getAttitude().w() +(rand()%180)/100.2, osg::Vec3(0,1,0)));
         }
       }
     }
