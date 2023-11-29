@@ -32,8 +32,7 @@ using namespace gramods;
 
 typedef gmNetwork::SyncSData<Eigen::Vector3f> SyncSVec;
 typedef gmNetwork::SyncSData<Eigen::Quaternionf> SyncSQuat;
-bool isNavigating = false;
-float startLength = 0.0;
+
 /**
  * Definition of the internal code of MyApp
  */
@@ -113,6 +112,9 @@ struct MyApp::Impl {
   osg::ref_ptr<osg::PositionAttitudeTransform> plane;
   osg::ref_ptr<osg::PositionAttitudeTransform> truck;
   osg::ref_ptr<osg::PositionAttitudeTransform> navigation;
+  osg::ref_ptr<osg::PositionAttitudeTransform> grabber = nullptr;
+  bool isNavigating = false;
+  float startLength = 0.0;
 
 };
 
@@ -340,14 +342,23 @@ void MyApp::Impl::update_states(gmCore::Updateable::clock::time_point time) {
       //For each intersection we traverse the nodePath to check if is same as our node.
       for (auto &node : itr.nodePath ){
         if(node == truck){
-            truck->setAttitude(osg::Quat(truck->getAttitude().w() + (rand()%180)/100.2, osg::Vec3(0,0,1)));
+          grabber = truck;
+          truck->setAttitude(osg::Quat(truck->getAttitude().w() + (rand()%180)/100.2, osg::Vec3(0,0,1)));
         }
-        if(node == plane){
-            plane->setAttitude(osg::Quat(truck->getAttitude().w() +(rand()%180)/100.2, osg::Vec3(0,1,0)));
+        else if(node == plane){
+          grabber = plane;
+          plane->setAttitude(osg::Quat(truck->getAttitude().w() +(rand()%180)/100.2, osg::Vec3(0,1,0)));
         }
+        else grabber = nullptr;
       }
     }
   }
+
+  if (*sync_main_button && grabber != nullptr){
+    
+  }
+  
+
 }
 
 void MyApp::Impl::initOSG() {
