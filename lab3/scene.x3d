@@ -15,23 +15,23 @@
         </Shape>
     </Transform>
     <!--  CONE   -->
-    <Transform DEF="CTR" translation="0 0 0" >
+    <Transform DEF="CTR" translation="-0.2 0 0" >
         <Shape>
             <Appearance>
-                <Material diffuseColor="0.9 0.5 0.8" />
+                <Material DEF="coneMat" diffuseColor="1.0 1.0 1.0" />
                 <FrictionalSurface useRelativeValues="false" stiffness="200" damping="0" staticFriction="0" dynamicFriction="0" />
             </Appearance>
-            <Cone bottomRadius="0.05" height="0.2"/>
+            <Cone DEF="cone" bottomRadius="0.05" height="0.2"/>
         </Shape>
     </Transform>
     <!--   SPHERE    -->
-    <Transform DEF="STR" translation="-0.2 0 0" >
+    <Transform DEF="STR" translation="0 0 0" >
         <Shape>
             <Appearance>
-                <Material diffuseColor="0.2 0.5 0.8" />
+                <Material DEF="SMat" diffuseColor="0.2 0.5 0.8" />
                 <FrictionalSurface useRelativeValues="false" stiffness="200" damping="0" staticFriction="0" dynamicFriction="0" />
             </Appearance>
-            <Sphere radius="0.05"/>
+            <Sphere DEF="sphere" radius="0.05"/>
         </Shape>
     </Transform>
 
@@ -49,7 +49,19 @@
     <ROUTE fromNode="ROTATOR" fromField="rotation"
             toNode="BTR" toField="rotation"/>
 
+    <!--  Coloring event  -->
 
-    
+    <PythonScript DEF="PAINTER" url="color.py"/>
+    <ROUTE fromNode="cone" fromField="isTouched"
+            toNode="PAINTER" toField="color"/>
+    <ROUTE fromNode="PAINTER" fromField="color"
+            toNode="coneMat" toField="diffuseColor"/>
 
+    <!-- how to add haptic event for another object-->
+    <!--
+    <PythonScript DEF="PAINTER1" url="color.py"/>
+    <ROUTE fromNode="sphere" fromField="isTouched"
+            toNode="PAINTER1" toField="color"/>
+    <ROUTE fromNode="PAINTER1" fromField="color"
+            toNode="SMat" toField="diffuseColor"/> -->
 </Scene>
