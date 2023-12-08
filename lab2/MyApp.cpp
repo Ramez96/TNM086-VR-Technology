@@ -378,7 +378,7 @@ void MyApp::Impl::update_states(gmCore::Updateable::clock::time_point time) {
       isScaled = false;
     }
   }
-  //TO-DO move the currentGrabbedObject when main button is pressed somehow
+  //Move the currentGrabbedObject when main button is pressed
   if (*sync_main_button && currentGrabbedObject != nullptr){
     osg::Vec3 wandMovement = oP - previousWandPosition;
     //Calculate the new pos of object
