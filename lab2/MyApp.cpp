@@ -1,6 +1,6 @@
 
 #include "MyApp.hh"
-
+#include <iostream>
 #include <gmCore/TimeTools.hh>
 #include <gmCore/FileResolver.hh>
 
@@ -109,11 +109,12 @@ struct MyApp::Impl {
 
   osg::ref_ptr<osg::Group> scenegraph_root = new osg::Group;
   osg::ref_ptr<osg::MatrixTransform> wand_transform = new osg::MatrixTransform;
-  osg::ref_ptr<osg::PositionAttitudeTransform> plane;
-  osg::ref_ptr<osg::PositionAttitudeTransform> truck;
-  osg::ref_ptr<osg::PositionAttitudeTransform> navigation;
-  osg::ref_ptr<osg::PositionAttitudeTransform> grabber = nullptr;
+  osg::ref_ptr<osg::MatrixTransform> plane;
+  osg::ref_ptr<osg::MatrixTransform> truck;
+  osg::ref_ptr<osg::MatrixTransform> navigation;
+  osg::ref_ptr<osg::MatrixTransform> prevGrabbedObject = nullptr;
   bool isNavigating = false;
+  bool isScaled = false;
   float startLength = 0.0;
 
 };
@@ -325,7 +326,7 @@ void MyApp::Impl::update_states(gmCore::Updateable::clock::time_point time) {
     float length = (oP-headPos).length();
     float velocity = length - startLength;
     //pointing mode 
-    navigation->setPosition((navigation->getPosition() + (oQ*forward)*velocity/80));
+    navigation->setMatrix((navigation->getMatrix() * osg::Matrix::translate(oQ*forward*velocity/80)));
     //Cross hair mode
     //osg::Vec3 eyeHand = (oP-headPos)/length;
     //navigation->setPosition((navigation->getPosition() + (eyeHand)*velocity/100));
@@ -334,28 +335,49 @@ void MyApp::Impl::update_states(gmCore::Updateable::clock::time_point time) {
     isNavigating = false;
   }
   
+  osg::MatrixTransform * currentGrabbedObject = nullptr;
   //If there is intersections
   if(intersector->containsIntersections()){  
     osgUtil::RayIntersector::Intersections& intersections = intersector->getIntersections();
     //Loop through a list of Intersection
+    currentGrabbedObject = nullptr;
     for (auto &itr : intersections){
       //For each intersection we traverse the nodePath to check if is same as our node.
       for (auto &node : itr.nodePath ){
-        if(node == truck){
-          grabber = truck;
-          truck->setAttitude(osg::Quat(truck->getAttitude().w() + (rand()%180)/100.2, osg::Vec3(0,0,1)));
+        //If intersection is truck
+        if(node == truck){        
+          //Save pointer to the current intersected object  
+          currentGrabbedObject = truck;
+          break;
         }
-        else if(node == plane){
-          grabber = plane;
-          plane->setAttitude(osg::Quat(truck->getAttitude().w() +(rand()%180)/100.2, osg::Vec3(0,1,0)));
-        }
-        else grabber = nullptr;
+        //same logic
+        if(node == plane){
+          currentGrabbedObject = plane;
+          break;
+        } 
       }
+      if(currentGrabbedObject != nullptr)break;
+    }    
+  }
+  //If there is intersected object
+  if (currentGrabbedObject != nullptr){
+    //If object has not been scaled
+    if(!isScaled){
+      //Scale and save pointer to scaled object
+      currentGrabbedObject->setMatrix( osg::Matrix::scale(1.25, 1.25, 1.25) * currentGrabbedObject->getMatrix());
+      prevGrabbedObject = currentGrabbedObject;
+      isScaled = true;
+    }
+  //If there is no intersected object
+  }else{
+    //If a previously intersected object has been scaled then rescale
+    if (isScaled){
+      prevGrabbedObject->setMatrix( osg::Matrix::scale(0.8, 0.8, 0.8) * prevGrabbedObject->getMatrix());
+      isScaled = false;
     }
   }
-
-  if (*sync_main_button && grabber != nullptr){
-    
+  //TO-DO move the currentGrabbedObject when main button is pressed somehow
+  if (*sync_main_button && currentGrabbedObject != nullptr){
   }
   
 
@@ -375,17 +397,17 @@ void MyApp::Impl::initOSG() {
     osg::ref_ptr<osg::Node> truckNode = osgDB::readNodeFile("dumptruck.osg");
     osg::ref_ptr<osg::Node> planeNode = osgDB::readNodeFile("cessna.osg");
     osg::ref_ptr<osg::Group> subRoot = new osg::Group();
-    truck = new osg::PositionAttitudeTransform();
-    plane = new osg::PositionAttitudeTransform();
-    navigation = new osg::PositionAttitudeTransform();
+    truck = new osg::MatrixTransform();
+    plane = new osg::MatrixTransform();
+    navigation = new osg::MatrixTransform();
 
-    plane->setPosition(osg::Vec3(-1,0,0));
+    plane->setMatrix(osg::Matrix::scale(0.06,0.06,0.06));
+    plane->setMatrix(plane->getMatrix() * osg::Matrix::translate(osg::Vec3(-1,0,0)));
     //plane->setAttitude(osg::Quat(-0.7, osg::Vec3(1,0,0)));
-    plane->setScale(osg::Vec3(0.06,0.06,0.06));
+    truck->setMatrix(osg::Matrix::rotate(1.57, 0, 0,1));
+    truck->setMatrix(truck->getMatrix() * osg::Matrix::scale(0.06,0.06,0.06));
+    truck->setMatrix(truck->getMatrix() * osg::Matrix::translate(osg::Vec3(1.5,0,0)));
 
-    truck->setPosition(osg::Vec3(1,0, 0));
-    truck->setAttitude(osg::Quat(1.57, osg::Vec3(0,0,1)));
-    truck->setScale(osg::Vec3(0.06,0.06,0.06));
 
     truck->addChild(truckNode);
     plane->addChild(planeNode);
