@@ -113,6 +113,8 @@ struct MyApp::Impl {
   osg::ref_ptr<osg::MatrixTransform> truck;
   osg::ref_ptr<osg::MatrixTransform> navigation;
   osg::ref_ptr<osg::MatrixTransform> prevGrabbedObject = nullptr;
+  osg::Vec3 previousWandPosition = osg::Vec3(0,0,0);
+  osg::Quat previousWandOrientation;
   bool isNavigating = false;
   bool isScaled = false;
   float startLength = 0.0;
@@ -378,9 +380,19 @@ void MyApp::Impl::update_states(gmCore::Updateable::clock::time_point time) {
   }
   //TO-DO move the currentGrabbedObject when main button is pressed somehow
   if (*sync_main_button && currentGrabbedObject != nullptr){
-  }
+    osg::Vec3 wandMovement = oP - previousWandPosition;
+    //Calculate the new pos of object
+    osg::Vec3 newPosition = currentGrabbedObject->getMatrix().getTrans() + wandMovement;
+    //Calculate the difference in wand rotation and interpolate the angle.
+    osg::Quat newRotation = oQ * previousWandOrientation.inverse();
+    newRotation.slerp(1.0f, currentGrabbedObject->getMatrix().getRotate(), newRotation);
   
-
+    currentGrabbedObject->setMatrix(osg::Matrix::translate(newPosition)* osg::Matrix::rotate(newRotation) * currentGrabbedObject->getMatrix());
+    
+    //Update the previous pos and rot of wand
+    previousWandPosition = oP;
+    previousWandOrientation = oQ;
+  }
 }
 
 void MyApp::Impl::initOSG() {
